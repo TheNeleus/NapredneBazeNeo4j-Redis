@@ -1,0 +1,20 @@
+services:
+  # --- Konfiguracija za Neo4j ---
+  neo4j:
+    image: neo4j:latest
+    container_name: meetup_neo4j
+    ports:
+      - "7474:7474"   # HTTP pristup (Browser)
+      - "7687:7687"   # Bolt pristup (za tvoju .NET aplikaciju)
+    environment:
+      NEO4J_AUTH: neo4j/tajnaSifra123  # <--- Ovo je username/password
+      NEO4J_PLUGINS: '["apoc"]'        # Uključujemo APOC biblioteku (trebaće ti)
+
+  # --- Konfiguracija za Redis ---
+  redis:
+    image: redis:latest
+    container_name: meetup_redis
+    ports:
+      - "6379:6379"   # Standardni Redis port
+    # Opciono: komanda da se uključi perzistencija (da ne gubiš podatke kad ugasiš)
+    command: redis-server --appendonly yes
