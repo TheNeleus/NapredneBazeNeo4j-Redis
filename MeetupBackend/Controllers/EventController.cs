@@ -65,14 +65,29 @@ namespace MeetupBackend.Controllers
             }
         }
 
-        [HttpGet("recommendations")]
-        public async Task<IActionResult> GetRecommendations([FromHeader] string token)
+        [HttpGet("friendsrecommendations")]
+        public async Task<IActionResult> GetFriendsEvents([FromHeader] string token)
         {
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null) return Unauthorized("Session expired.");
 
-            var events = await _eventService.GetRecommendedEvents(userId);
+            var events = await _eventService.GetFriendsEvents(userId);
+            return Ok(events);
+        }
+
+        [HttpGet("recommendations")]
+        public async Task<IActionResult> GetRecommendations(
+            [FromHeader] string token, 
+            [FromQuery] double latitude, 
+            [FromQuery] double longitude,
+            [FromQuery] double radius = 10)
+        {
+            string? userId = await _userService.GetUserIdFromSession(token);
+
+            if (userId == null) return Unauthorized("Session expired.");
+
+            var events = await _eventService.GetRecommendedEvents(userId, latitude, longitude, radius);
             return Ok(events);
         }
     }
