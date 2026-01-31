@@ -178,5 +178,106 @@ namespace MeetupBackend.Services
 
             return recommendations;
         }
+
+        public async Task<List<Dictionary<string, object>>> GetNearestEvents(double lat, double lon, double radiusKm)
+        {
+            var geoResults = await _redisDb.GeoRadiusAsync(
+                "events:geo", lon, lat, radiusKm, GeoUnit.Kilometers, -1, Order.Ascending, 
+                GeoRadiusOptions.WithDistance | GeoRadiusOptions.WithCoordinates
+            );
+
+            if (geoResults.Length == 0) 
+            {
+                return new List<Dictionary<string, object>>();
+            }
+
+            var eventDistances = geoResults.ToDictionary(k => k.Member.ToString(), v => v.Distance.Value);
+            var eventIds = eventDistances.Keys.ToList();
+
+            await using var session = _driver.AsyncSession();
+
+         var query = @"
+            MATCH (e:Event)
+            WHERE e.id IN $eventIds
+            AND datetime(e.date) > datetime() 
+            RETURN e.id as id, 
+                e.title as title, 
+                e.description as description, 
+                e.date as date, 
+                e.category as category,
+                e.latitude as latitude,
+                e.longitude as longitude";
+            
+            string nowString = DateTime.Now.ToString("s");
+
+            var result = await session.RunAsync(query, new { 
+                eventIds = eventIds, 
+                now = nowString     
+            });
+            var nearestEvents = new List<Dictionary<string, object>>();
+
+            await result.ForEachAsync(record =>
+            {
+                string id = record["id"].As<string>();
+                if (eventDistances.ContainsKey(id))
+                {
+                    var eventData = new Dictionary<string, object>
+                    {
+                        { "id", id },
+                        { "title", record["title"].As<string>() },
+                        { "date", record["date"].As<string>() },
+                        { "distanceKm", Math.Round(eventDistances[id], 2) } 
+                    };
+                    nearestEvents.Add(eventData);
+                }
+            });
+            return nearestEvents.OrderBy(e => e["distanceKm"]).ToList();
+        }
+
+        public async Task<Event?> UpdateEvent(string userId, string eventId, Event updatedEvent)
+        {
+            await using var session = _driver.AsyncSession();
+
+            // Upit proverava da li je korisnik Admin ili Kreator pre nego što uradi SET
+            var query = @"
+                MATCH (u:User {id: $userId})
+                MATCH (e:Event {id: $eventId})
+                OPTIONAL MATCH (u)-[:HAS_ROLE]->(adminRole:Role {name: 'Admin'})
+                OPTIONAL MATCH (u)-[creatorRel:CREATED]->(e)
+                WITH e, adminRole, creatorRel
+                WHERE adminRole IS NOT NULL OR creatorRel IS NOT NULL
+                SET e.title = $title,
+                    e.description = $description,
+                    e.date = $date,
+                    e.category = $category,
+                    e.latitude = $latitude,
+                    e.longitude = $longitude
+                RETURN e.id as id, e.title as title, e.latitude as latitude, e.longitude as longitude";
+
+            var result = await session.RunAsync(query, new
+            {
+                userId,
+                eventId,
+                title = updatedEvent.Title,
+                description = updatedEvent.Description,
+                date = updatedEvent.Date.ToString("s"),
+                category = updatedEvent.Category,
+                latitude = updatedEvent.Latitude,
+                longitude = updatedEvent.Longitude
+            });
+
+            if (await result.FetchAsync())
+            {
+                
+                await _redisDb.GeoAddAsync("events:geo", 
+                    new GeoEntry(updatedEvent.Longitude, updatedEvent.Latitude, eventId));
+
+                
+                updatedEvent.Id = eventId; 
+                return updatedEvent;
+            }
+
+            return null;
+        }
     }
 }

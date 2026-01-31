@@ -166,5 +166,41 @@ namespace MeetupBackend.Services
             string key = $"session:{sessionToken}";
             await _redisDb.KeyDeleteAsync(key);
         }
+
+        public async Task<User?> UpdateUser(string userId, User userUpdates)
+        {
+            await using var session = _driver.AsyncSession();
+
+            var query = @"
+                MATCH (u:User {id: $userId})
+                SET u.name = $name,
+                    u.email = $email,
+                    u.interests = $interests
+                RETURN u.id as id, u.name as name, u.email as email, u.interests as interests";
+
+            var result = await session.RunAsync(query, new
+            {
+                userId,
+                name = userUpdates.Name,
+                email = userUpdates.Email,
+                interests = userUpdates.Interests
+            });
+
+            if (await result.FetchAsync())
+            {
+                // Vraćamo ažurirano stanje
+                // Napomena: Role se ovde ne menja (to bi trebalo biti u zasebnoj admin metodi)
+                return new User
+                {
+                    Id = result.Current["id"].As<string>(),
+                    Name = result.Current["name"].As<string>(),
+                    Email = result.Current["email"].As<string>(),
+                    Interests = result.Current["interests"].As<List<string>>(),
+                    Role = userUpdates.Role // Ili fetchuj ponovo ako je bitno
+                };
+            }
+
+            return null;
+        }
     }
 }

@@ -90,5 +90,43 @@ namespace MeetupBackend.Controllers
             var events = await _eventService.GetRecommendedEvents(userId, latitude, longitude, radius);
             return Ok(events);
         }
+
+        [HttpGet("nearest")]
+        public async Task<IActionResult> GetNearestEvent(
+            [FromQuery] double latitude,
+            [FromQuery] double longitude,
+            [FromQuery] double radius = 50)
+        {
+            if(latitude == 0 || longitude == 0)
+            {
+                return BadRequest("Latitude and Longidude are required.");
+            }
+
+            var events = await _eventService.GetNearestEvents(latitude, longitude, radius);
+
+            return Ok(events);
+        }
+
+        [HttpPut("{eventId}")]
+        public async Task<IActionResult> UpdateEvent(
+            string eventId,
+            [FromBody] Event evt, 
+            [FromHeader] string token)
+        {
+            string? userId = await _userService.GetUserIdFromSession(token);
+
+            if (userId == null) return Unauthorized("Session expired.");
+
+            var updatedEvent = await _eventService.UpdateEvent(userId, eventId, evt);
+
+            if (updatedEvent != null)
+            {
+                return Ok(updatedEvent);
+            }
+            else
+            {
+                return BadRequest("Event not found or you don't have permission to update it.");
+            }
+        }
     }
 }

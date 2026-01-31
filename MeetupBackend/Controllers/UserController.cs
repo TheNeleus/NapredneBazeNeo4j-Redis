@@ -57,5 +57,30 @@ namespace MeetupBackend.Controllers
             await _userService.Logout(token);
             return Ok("Logout successful.");
         }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateUser(
+            [FromBody] User userUpdates,
+            [FromHeader] string token)
+        {
+            string? userId = await _userService.GetUserIdFromSession(token);
+
+            if (userId == null)
+            {
+                return Unauthorized("Session expired.");
+            }
+
+            // Opcionalno: Sprečiti korisnika da menja svoj ID ili Role kroz ovaj endpoint
+            userUpdates.Id = userId; 
+
+            var updatedUser = await _userService.UpdateUser(userId, userUpdates);
+
+            if (updatedUser != null)
+            {
+                return Ok(updatedUser);
+            }
+
+            return NotFound("User not found.");
+        }
     }
 }
