@@ -1,6 +1,8 @@
 using Neo4j.Driver;
 using StackExchange.Redis;
-
+using MeetupBackend.Services; // Dodaj ovo
+using MeetupBackend.Hubs;     // Dodaj ovo
+using MeetupBackend.Workers;  // Dodaj ovo
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. REDIS KONEKCIJA ---
@@ -20,12 +22,33 @@ builder.Services.AddSingleton<IDriver>(neo4jDriver);
 builder.Services.AddScoped<MeetupBackend.Services.EventService>();
 builder.Services.AddScoped<MeetupBackend.Services.UserService>();
 
+builder.Services.AddScoped<ChatService>();
+builder.Services.AddSignalR();
+
+// DVA Background Workera:
+// 1. Za prebacivanje iz Redisa u Neo4j (Clean-up)
+builder.Services.AddHostedService<ChatPersistenceWorker>();
+// 2. Za Pub/Sub slušanje (Real-time distribution)
+builder.Services.AddHostedService<RedisSubscriberService>();
+
+
 // Dodajemo kontrolere i Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options => {
+    options.AddDefaultPolicy(builder => {
+        builder.WithOrigins("http://localhost:3000") // URL tvog frontenda
+               .AllowAnyHeader()
+               .AllowAnyMethod()
+               .AllowCredentials(); 
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors();
 
 // Konfiguracija HTTP pipeline-a
 if (app.Environment.IsDevelopment())
@@ -36,6 +59,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthorization();
 app.MapControllers();
+// ... mapiranje
+app.MapHub<ChatHub>("/chat");
 
 // Obavezno oslobađanje resursa kad se aplikacija ugasi
 app.Lifetime.ApplicationStopped.Register(() =>
