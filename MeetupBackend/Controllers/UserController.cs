@@ -23,8 +23,10 @@ namespace MeetupBackend.Controllers
         }
 
         [HttpPost("friends/{friendId}")]
-        public async Task<IActionResult> AddFriend(string friendId, [FromHeader] string token)
+        public async Task<IActionResult> AddFriend(string friendId)
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
             string? currentUserId = await _userService.GetUserIdFromSession(token);
 
             if (currentUserId == null)
@@ -33,7 +35,6 @@ namespace MeetupBackend.Controllers
             }
 
             await _userService.AddFriend(currentUserId, friendId.Trim());
-            
             return Ok("Friend added successfully!");
         }
 
@@ -41,28 +42,29 @@ namespace MeetupBackend.Controllers
         public async Task<IActionResult> Login([FromBody] string email)
         {
             var user = await _userService.GetUserByEmail(email);
-            if (user == null)
-            {
-                return Unauthorized("There's no user with this email.");
-            }
+            if (user == null) return Unauthorized("User not found.");
 
             string token = await _userService.CreateSession(user.Id);
-
             return Ok(new { Token = token, User = user });
         }
 
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromHeader] string token)
+        public async Task<IActionResult> Logout()
         {
-            await _userService.Logout(token);
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                await _userService.Logout(token);
+            }
             return Ok("Logout successful.");
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateUser(
-            [FromBody] User userUpdates,
-            [FromHeader] string token)
+        public async Task<IActionResult> UpdateUser([FromBody] User userUpdates)
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null)
@@ -70,16 +72,11 @@ namespace MeetupBackend.Controllers
                 return Unauthorized("Session expired.");
             }
 
-            // Opcionalno: Sprečiti korisnika da menja svoj ID ili Role kroz ovaj endpoint
-            userUpdates.Id = userId; 
+            userUpdates.Id = userId;
 
             var updatedUser = await _userService.UpdateUser(userId, userUpdates);
 
-            if (updatedUser != null)
-            {
-                return Ok(updatedUser);
-            }
-
+            if (updatedUser != null) return Ok(updatedUser);
             return NotFound("User not found.");
         }
     }

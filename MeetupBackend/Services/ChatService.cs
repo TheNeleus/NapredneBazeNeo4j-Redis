@@ -7,74 +7,81 @@ namespace MeetupBackend.Services
 {
     public class ChatService
     {
-        private readonly IDatabase _redisDb;
-        private readonly ISubscriber _redisPubSub; // Za Pub/Sub
-        private readonly IDriver _neo4jDriver;
-        
-        // Kanal na koji saljemo sve poruke. Subscriber cee ih filtrirati.
-        private const string PUBSUB_CHANNEL = "chat:events:live"; 
+        private readonly IDriver _driver;            
+        private readonly IConnectionMultiplexer _redis;  
 
-        public ChatService(IConnectionMultiplexer redis, IDriver driver)
+        public ChatService(IDriver driver, IConnectionMultiplexer redis)
         {
-            _redisDb = redis.GetDatabase();
-            _redisPubSub = redis.GetSubscriber();
-            _neo4jDriver = driver;
+            _driver = driver;
+            _redis = redis;
         }
-
-        private string GetEventKey(string eventId) => $"chat:event:{eventId}:history";
 
         public async Task SendMessage(EventChatMessage message)
         {
-            var serialized = JsonSerializer.Serialize(message);
+            var db = _redis.GetDatabase();
+            var json = JsonSerializer.Serialize(message);
 
-            //Write-Behind: Sacuvaj u Redis Listu za istoriju
-            await _redisDb.ListRightPushAsync(GetEventKey(message.EventId), serialized);
+            var key = $"chat:event:{message.EventId}:history";
+            await db.ListRightPushAsync(key, json);
 
-            //Pub/Sub: Objavi poruku svim instancama aplikacije(razlicitim serverima)
-            //Subscriber servis ce ovo uhvatiti i proslediti SignalR klijentima
-            await _redisPubSub.PublishAsync(PUBSUB_CHANNEL, serialized);
+            await db.PublishAsync("chat:events:live", json);
         }
 
-        public async Task<List<EventChatMessage>> GetEventHistory(string eventId)
+        public async Task<List<EventChatMessage>> GetEventHistory(string eventId, int page = 0, int pageSize = 50)
         {
-            var messages = new List<EventChatMessage>();
-            var key = GetEventKey(eventId);
+            var allMessages = new List<EventChatMessage>();
 
-            //Hot Data (Redis)
-            var redisMessages = await _redisDb.ListRangeAsync(key);
-            foreach (var item in redisMessages)
-            {
-                var msg = JsonSerializer.Deserialize<EventChatMessage>(item.ToString());
-                if(msg != null) messages.Add(msg);
-            }
-
-            //Cold Data (Neo4j)
-            await using var session = _neo4jDriver.AsyncSession();
-            var query = @"
-                MATCH (e:Event {id: $eventId})<-[:POSTED_IN]-(m:Message)<-[:SENT]-(u:User)
-                RETURN m.content as content, 
-                       m.timestamp as timestamp, 
-                       u.id as senderId, 
-                       u.name as senderName
-                ORDER BY m.timestamp ASC";
-
-            var result = await session.RunAsync(query, new { eventId });
+            await using var session = _driver.AsyncSession();
             
-            var neo4jMsgs = new List<EventChatMessage>();
-            await result.ForEachAsync(record =>
+            int skip = page * pageSize;
+
+            var query = @"
+                MATCH (e:Event {id: $eventId})<-[:POSTED_IN]-(m:Message)
+                MATCH (u:User)-[:SENT]->(m)
+                RETURN m.content as Content, m.timestamp as Timestamp, u.id as SenderId, u.name as SenderName
+                ORDER BY m.timestamp DESC 
+                SKIP $skip 
+                LIMIT $limit
+            ";
+
+            var cursor = await session.RunAsync(query, new { eventId, skip, limit = pageSize });
+            
+            var neo4jMessages = await cursor.ToListAsync(record => new EventChatMessage
             {
-                neo4jMsgs.Add(new EventChatMessage
-                {
-                    EventId = eventId,
-                    Content = record["content"].As<string>(),
-                    SenderId = record["senderId"].As<string>(),
-                    SenderName = record["senderName"].As<string>(),
-                    Timestamp = DateTime.Parse(record["timestamp"].As<string>())
-                });
+                EventId = eventId,
+                SenderId = record["SenderId"].As<string>(),
+                SenderName = record["SenderName"].As<string>(),
+                Content = record["Content"].As<string>(),
+                Timestamp = DateTime.Parse(record["Timestamp"].As<string>())
             });
 
-            neo4jMsgs.AddRange(messages);
-            return neo4jMsgs;
+            allMessages.AddRange(neo4jMessages);
+
+            if (page == 0)
+            {
+                var db = _redis.GetDatabase();
+                var redisKey = $"chat:event:{eventId}:history";
+
+                var redisRawData = await db.ListRangeAsync(redisKey, 0, -1);
+                
+                var redisMessages = new List<EventChatMessage>();
+                foreach (var item in redisRawData)
+                {
+                    var msg = JsonSerializer.Deserialize<EventChatMessage>(item.ToString());
+                    if (msg != null)
+                    {
+                        redisMessages.Add(msg);
+                    }
+                }
+
+                allMessages.AddRange(redisMessages);
+            }
+
+            var uniqueMessages = allMessages
+                .DistinctBy(m => new { m.SenderId, m.Timestamp, m.Content }) // Jedinstvenost po ovim poljima
+                .ToList();
+
+            return uniqueMessages.OrderBy(m => m.Timestamp).ToList();
         }
     }
 }

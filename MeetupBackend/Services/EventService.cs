@@ -53,6 +53,44 @@ namespace MeetupBackend.Services
             return evt;
         }
 
+        public async Task<List<Dictionary<string, object>>> GetAllEvents()
+        {
+            await using var session = _driver.AsyncSession();
+
+            var query = @"
+                MATCH (e:Event)
+                WHERE datetime(e.date) > datetime() 
+                RETURN e.id as id, 
+                    e.title as title, 
+                    e.description as description, 
+                    e.date as date, 
+                    e.category as category,
+                    e.latitude as latitude,
+                    e.longitude as longitude
+                ORDER BY e.date ASC";
+
+            var result = await session.RunAsync(query);
+
+            var events = new List<Dictionary<string, object>>();
+
+            await result.ForEachAsync(record =>
+            {
+                var eventData = new Dictionary<string, object>
+                {
+                    { "id", record["id"].As<string>() },
+                    { "title", record["title"].As<string>() },
+                    { "description", record["description"].As<string>() },
+                    { "date", record["date"].As<string>() },
+                    { "category", record["category"].As<string>() },
+                    { "latitude", record["latitude"].As<double>() },
+                    { "longitude", record["longitude"].As<double>() }
+                };
+                events.Add(eventData);
+            });
+
+            return events;
+        }
+
         public async Task AttendEvent(string userId, string eventId)
         {
             await using var session = _driver.AsyncSession();
@@ -102,12 +140,14 @@ namespace MeetupBackend.Services
 
             var query = @"
                 MATCH (me:User {id: $userId})-[:FRIEND]->(f:User)-[:ATTENDING]->(e:Event)
-                WHERE e.date > datetime()
+                WHERE datetime(e.date) > datetime()
                 RETURN e.id as id, 
                        e.title as title, 
                        e.description as description, 
                        e.date as date, 
                        e.category as category,
+                       e.latitude as latitude,
+                       e.longitude as longitude,
                        count(f) as friendsGoing
                 ORDER BY friendsGoing DESC";
 
@@ -123,7 +163,9 @@ namespace MeetupBackend.Services
                     { "title", record["title"].As<string>() },
                     { "description", record["description"].As<string>() },
                     { "date", record["date"].As<string>() },
-                    { "friendsGoing", record["friendsGoing"].As<int>() }
+                    { "friendsGoing", record["friendsGoing"].As<int>() },
+                    { "latitude", record["latitude"].As<double>() }, 
+                    { "longitude", record["longitude"].As<double>() }
                 };
                 recommendations.Add(eventData);
             });

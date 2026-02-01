@@ -1,5 +1,41 @@
+# --- OS FILES (Smece od operativnog sistema) ---
+.DS_Store
+Thumbs.db
+
+# --- VISUAL STUDIO (Bitno!) ---
+# Ovo su tvoja licna podesavanja editora, to ne ide na git
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# --- BACKEND (.NET / C#) ---
+# Binaries i Object fajlovi (ovo se generiše kad buildujes, ne treba na gitu)
 bin/
 obj/
-.vs/
-.vscode/
+# Debug i Release folderi
+Debug/
+Release/
+# Osetljivi podaci (ako imas tajne kljuceve ovde)
+appsettings.Development.json
+
+# --- FRONTEND (Node / React) ---
+# OVO JE NAJVAZNIJE - Folder od 500MB koji se skida sa npm install
+node_modules/
+
+# Build folderi (ovo se pravi kad uradis npm run build)
+build/
+dist/
+
+# Environment varijable (tu mogu biti API kljucevi)
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logovi
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

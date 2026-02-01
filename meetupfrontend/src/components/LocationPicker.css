@@ -1,0 +1,6 @@
+.location-picker-map {
+  height: 300px;
+  width: 100%;
+  border-radius: 8px;
+  cursor: crosshair; /* Da korisnik zna da moze da klikne */
+}

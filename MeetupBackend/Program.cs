@@ -1,8 +1,8 @@
 using Neo4j.Driver;
 using StackExchange.Redis;
-using MeetupBackend.Services; // Dodaj ovo
-using MeetupBackend.Hubs;     // Dodaj ovo
-using MeetupBackend.Workers;  // Dodaj ovo
+using MeetupBackend.Services; 
+using MeetupBackend.Hubs;    
+using MeetupBackend.Workers; 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. REDIS KONEKCIJA ---
@@ -21,7 +21,6 @@ builder.Services.AddSingleton<IDriver>(neo4jDriver);
 // Registrujemo naš servis da bi ga Kontroler mogao koristiti
 builder.Services.AddScoped<MeetupBackend.Services.EventService>();
 builder.Services.AddScoped<MeetupBackend.Services.UserService>();
-
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddSignalR();
 
@@ -39,7 +38,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(builder => {
-        builder.WithOrigins("http://localhost:3000") // URL tvog frontenda
+        // Promenio sam port 3000 u 5173 jer novi React (Vite) radi na tom portu
+        builder.WithOrigins("http://localhost:5173") // URL frontenda
                .AllowAnyHeader()
                .AllowAnyMethod()
                .AllowCredentials(); 
@@ -58,9 +58,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthorization();
+app.UseHttpsRedirection();
 app.MapControllers();
+
 // ... mapiranje
-app.MapHub<ChatHub>("/chat");
+app.MapHub<ChatHub>("/chatHub");
 
 // Obavezno oslobađanje resursa kad se aplikacija ugasi
 app.Lifetime.ApplicationStopped.Register(() =>

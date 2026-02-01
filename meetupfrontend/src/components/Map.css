@@ -1,0 +1,27 @@
+/* Leaflet mapa mora imati visinu da bi se videla */
+.map-view {
+  height: 100%;
+  width: 100%;
+  z-index: 1; /* Da bude ispod modala */
+}
+
+.popup-btn {
+  cursor: pointer;
+  background-color: #646cff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.popup-btn:hover {
+  background-color: #535bf2;
+}
+
+/* Naslov u popup-u */
+.popup-title {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+}

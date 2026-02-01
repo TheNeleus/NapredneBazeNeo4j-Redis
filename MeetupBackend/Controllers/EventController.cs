@@ -18,8 +18,10 @@ namespace MeetupBackend.Controllers
         }
         
         [HttpPost]
-        public async Task<IActionResult> CreateEvent([FromBody] Event evt, [FromHeader] string token)
+        public async Task<IActionResult> CreateEvent([FromBody] Event evt)
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null)
@@ -32,9 +34,17 @@ namespace MeetupBackend.Controllers
             return Ok("Event is created!");
         }
 
-        [HttpPost("{eventId}/attend")]
-        public async Task<IActionResult> AttendEvent(string eventId, [FromHeader] string token)
+        [HttpGet]
+        public async Task<IActionResult> GetAllEvents()
         {
+            var events = await _eventService.GetAllEvents();
+            return Ok(events);
+        }
+
+        [HttpPost("{eventId}/attend")]
+        public async Task<IActionResult> AttendEvent(string eventId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null)
@@ -47,9 +57,11 @@ namespace MeetupBackend.Controllers
         }
 
         [HttpDelete("{eventId}")]
-        public async Task<IActionResult> DeleteEvent(string eventId, [FromHeader] string token)
+        public async Task<IActionResult> DeleteEvent(string eventId)
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? userId = await _userService.GetUserIdFromSession(token);
+            
             if (userId == null) return Unauthorized();
 
             bool success = await _eventService.DeleteEvent(userId, eventId);
@@ -60,14 +72,14 @@ namespace MeetupBackend.Controllers
             }
             else
             {
-                // Ne znamo dal je bad request il not found, nbt vrv
                 return BadRequest("Event not found or you don't have permission to delete it.");
             }
         }
 
         [HttpGet("friendsrecommendations")]
-        public async Task<IActionResult> GetFriendsEvents([FromHeader] string token)
+        public async Task<IActionResult> GetFriendsEvents()
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null) return Unauthorized("Session expired.");
@@ -78,11 +90,11 @@ namespace MeetupBackend.Controllers
 
         [HttpGet("recommendations")]
         public async Task<IActionResult> GetRecommendations(
-            [FromHeader] string token, 
             [FromQuery] double latitude, 
             [FromQuery] double longitude,
             [FromQuery] double radius = 10)
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null) return Unauthorized("Session expired.");
@@ -108,11 +120,9 @@ namespace MeetupBackend.Controllers
         }
 
         [HttpPut("{eventId}")]
-        public async Task<IActionResult> UpdateEvent(
-            string eventId,
-            [FromBody] Event evt, 
-            [FromHeader] string token)
+        public async Task<IActionResult> UpdateEvent(string eventId, [FromBody] Event evt)
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null) return Unauthorized("Session expired.");
