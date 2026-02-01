@@ -30,7 +30,7 @@ namespace MeetupBackend.Services
             //Write-Behind: Sacuvaj u Redis Listu za istoriju
             await _redisDb.ListRightPushAsync(GetEventKey(message.EventId), serialized);
 
-            //Pub/Sub: Objavi poruku svim instancama aplikacije
+            //Pub/Sub: Objavi poruku svim instancama aplikacije(razlicitim serverima)
             //Subscriber servis ce ovo uhvatiti i proslediti SignalR klijentima
             await _redisPubSub.PublishAsync(PUBSUB_CHANNEL, serialized);
         }

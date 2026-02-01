@@ -18,7 +18,7 @@ namespace MeetupBackend.Hubs
         public override async Task OnConnectedAsync()
         {
             var httpContext = Context.GetHttpContext();
-            var token = httpContext?.Request.Query["access_token"].ToString();
+            var token = httpContext?.Request.Query["access_token"].ToString();// potencijalno opasno jer je u url-u
             
             if (!string.IsNullOrEmpty(token))
             {
