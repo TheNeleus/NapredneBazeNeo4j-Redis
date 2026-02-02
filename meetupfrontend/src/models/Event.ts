@@ -6,6 +6,7 @@ export interface MeetupEvent {
   longitude: number;
   date: string;
   category?: string;
+  attendees?: string[];
 }
 
 export interface CreateEventDto {

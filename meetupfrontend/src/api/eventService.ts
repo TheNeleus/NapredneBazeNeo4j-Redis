@@ -26,3 +26,12 @@ export const getRecommendedEvents = async (lat: number, lng: number, radius: num
 export const attendEvent = async (eventId: string): Promise<void> => {
   await apiClient.post(`/events/${eventId}/attend`);
 };
+
+export const deleteEvent = async (eventId: string): Promise<void> => {
+  await apiClient.delete(`/events/${eventId}`);
+};
+
+export const updateEvent = async (eventId: string, eventData: Partial<MeetupEvent>) => {
+  const response = await apiClient.put(`/events/${eventId}`, eventData);
+  return response.data;
+};

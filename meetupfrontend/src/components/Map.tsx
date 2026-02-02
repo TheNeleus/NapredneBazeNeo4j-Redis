@@ -21,7 +21,7 @@ interface MapProps {
 }
 
 const Map = ({ events, onEventSelect }: MapProps) => {
-  const center: LatLngExpression = [44.7866, 20.4489]; 
+  const center: LatLngExpression = [43.316, 21.894]; 
   
   return (
     <MapContainer center={center} zoom={13} className="map-view">

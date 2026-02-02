@@ -12,8 +12,8 @@ const Login = () => {
     e.preventDefault();
     try {
       const data = await login(email);
-      localStorage.setItem('meetup_token', data.token);
-      localStorage.setItem('meetup_user', JSON.stringify(data.user));
+      sessionStorage.setItem('meetup_token', data.token);
+      sessionStorage.setItem('meetup_user', JSON.stringify(data.user));  
       navigate('/home');
     } catch (err) {
       console.error(err);

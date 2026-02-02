@@ -16,12 +16,12 @@ namespace MeetupBackend.Controllers
             _eventService = eventService;
             _userService = userService;
         }
-        
+
         [HttpPost]
         public async Task<IActionResult> CreateEvent([FromBody] Event evt)
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            
+
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null)
@@ -61,7 +61,7 @@ namespace MeetupBackend.Controllers
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? userId = await _userService.GetUserIdFromSession(token);
-            
+
             if (userId == null) return Unauthorized();
 
             bool success = await _eventService.DeleteEvent(userId, eventId);
@@ -90,7 +90,7 @@ namespace MeetupBackend.Controllers
 
         [HttpGet("recommendations")]
         public async Task<IActionResult> GetRecommendations(
-            [FromQuery] double latitude, 
+            [FromQuery] double latitude,
             [FromQuery] double longitude,
             [FromQuery] double radius = 10)
         {
@@ -109,7 +109,7 @@ namespace MeetupBackend.Controllers
             [FromQuery] double longitude,
             [FromQuery] double radius = 50)
         {
-            if(latitude == 0 || longitude == 0)
+            if (latitude == 0 || longitude == 0)
             {
                 return BadRequest("Latitude and Longidude are required.");
             }
@@ -137,6 +137,17 @@ namespace MeetupBackend.Controllers
             {
                 return BadRequest("Event not found or you don't have permission to update it.");
             }
+        }
+
+        [HttpGet("{eventId}/attendees")]
+        public async Task<IActionResult> GetEventAttendees(string eventId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            string? userId = await _userService.GetUserIdFromSession(token);
+            if (userId == null) return Unauthorized("Session expired.");
+
+            var attendees = await _eventService.GetEventAttendees(eventId);
+            return Ok(attendees);
         }
     }
 }

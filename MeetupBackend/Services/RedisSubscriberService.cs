@@ -27,8 +27,6 @@ namespace MeetupBackend.Services
                 var message = JsonSerializer.Deserialize<EventChatMessage>(value.ToString());
                 if (message != null)
                 {
-                    // Kada stigne poruka iz Redisa, posalji je korisnicima u odredjenoj Grupi
-                    // "ReceiveMessage" je ime metode koju frontend slusa
                     await _hubContext.Clients.Group(message.EventId)
                         .SendAsync("ReceiveMessage", message);
                 }

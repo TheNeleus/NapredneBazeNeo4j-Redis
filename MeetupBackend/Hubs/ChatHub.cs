@@ -18,7 +18,7 @@ namespace MeetupBackend.Hubs
         public override async Task OnConnectedAsync()
         {
             var httpContext = Context.GetHttpContext();
-            var token = httpContext?.Request.Query["access_token"].ToString();// potencijalno opasno jer je u url-u
+            var token = httpContext?.Request.Query["access_token"].ToString();
             
             if (!string.IsNullOrEmpty(token))
             {
@@ -26,14 +26,13 @@ namespace MeetupBackend.Hubs
                 if (userId != null)
                 {
                     var user = await _userService.GetUserById(userId);
-                    Context.Items["User"] = user; // Cuvamo ceo user 
+                    Context.Items["User"] = user; 
                 }
             }
             
             await base.OnConnectedAsync();
         }
 
-        // Klijent mora pozvati ovo kada udje na stranicu eventa
         public async Task JoinEventGroup(string eventId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, eventId);
@@ -57,8 +56,6 @@ namespace MeetupBackend.Hubs
                 Content = content,
                 Timestamp = DateTime.UtcNow
             };
-
-            // Servis radi Publish u Redis, a Background Worker to hvata i salje nazad klijentima
             await _chatService.SendMessage(msg);
         }
     }

@@ -41,14 +41,12 @@ namespace MeetupBackend.Workers
 
         private async Task ProcessChatData()
         {
-            // Fix: Uzimamo endpoint dinamicki umesto hardcodovanog "localhost"
             var endpoint = _redis.GetEndPoints().FirstOrDefault();
             if (endpoint == null) return;
 
             var server = _redis.GetServer(endpoint);
             var db = _redis.GetDatabase();
 
-            // Trazimo sve kljuceve koji lice na chat istoriju
             foreach (var key in server.Keys(pattern: "chat:event:*:history"))
             {
                 long listLength = await db.ListLengthAsync(key);
@@ -74,7 +72,7 @@ namespace MeetupBackend.Workers
                             if (age > MAX_AGE)
                             {
                                 shouldMigrate = true;
-                                countToKeep = 0; // Ako je staro, prebaci SVE u arhivu (ili ostavi npr 5)
+                                countToKeep = 0; 
                                 _logger.LogInformation($"[Trigger-Time] Key: {key} oldest message is {age.TotalMinutes:F1} min old.");
                             }
                         }

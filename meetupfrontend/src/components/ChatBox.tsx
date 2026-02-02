@@ -24,20 +24,15 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
   const prevScrollHeightRef = useRef<number>(0);
   const isHistoryLoadRef = useRef(false);
 
-  useEffect(() => {
-    loadMessages(0);
-  }, [eventId]);
+  useEffect(() => { loadMessages(0); }, [eventId]);
 
   useLayoutEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-
     if (isHistoryLoadRef.current) {
       const newScrollHeight = container.scrollHeight;
       const heightDifference = newScrollHeight - prevScrollHeightRef.current;
-      
       container.scrollTop = heightDifference;
-      
       isHistoryLoadRef.current = false;
     } else {
       if (page === 0) {
@@ -46,35 +41,19 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
     }
   }, [messages, page]);
 
-
   const loadMessages = async (pageNum: number) => {
     if (isLoading || !hasMore) return;
-
     try {
       setIsLoading(true);
-
       if (pageNum > 0 && scrollContainerRef.current) {
         prevScrollHeightRef.current = scrollContainerRef.current.scrollHeight;
         isHistoryLoadRef.current = true; 
       }
-
       const newBatch = await getChatHistory(eventId, pageNum);
-      
-      if (newBatch.length < 50) {
-        setHasMore(false);
-      }
-
-      setMessages(prev => {
-        if (pageNum === 0) return newBatch;
-        return [...newBatch, ...prev];
-      });
-      
+      if (newBatch.length < 50) setHasMore(false);
+      setMessages(prev => (pageNum === 0 ? newBatch : [...newBatch, ...prev]));
       setPage(pageNum);
-    } catch (err) {
-      console.error("Failed to load history", err);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (err) { console.error("Failed to load history", err); } finally { setIsLoading(false); }
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -85,7 +64,7 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('meetup_token'); 
+    const token = sessionStorage.getItem('meetup_token'); 
     const newConnection = new HubConnectionBuilder()
       .withUrl('https://localhost:7000/chatHub', { accessTokenFactory: () => token || '' })
       .withAutomaticReconnect()
@@ -97,9 +76,7 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
     if (connection) {
       connection.start()
         .then(() => {
-            console.log('SignalR Connected');
             connection.invoke('JoinEventGroup', eventId);
-            
             connection.on('ReceiveMessage', (message: ChatMessage) => {
                 isHistoryLoadRef.current = false;
                 setMessages(prev => [...prev, message]);
@@ -109,7 +86,7 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
 
       return () => {
         if (connection.state === HubConnectionState.Connected) {
-            connection.stop().catch(err => console.error("Error stopping connection:", err));
+            connection.stop().catch(err => console.error(err));
         }
       };
     }
@@ -121,8 +98,6 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
         await connection.invoke('SendMessageToEvent', eventId, newMessage);
         setNewMessage('');
       } catch (e) { console.error('Send failed', e); }
-    } else {
-        console.warn("Cannot send message: No connection.");
     }
   };
 
@@ -130,24 +105,45 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
     return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const getInitials = (name: string) => {
+      if(!name) return '?';
+      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
   return (
     <div className="chat-container">
-      <h3 className="chat-title">Live Chat 💬</h3>
 
       <div 
         className="chat-messages" 
         ref={scrollContainerRef} 
         onScroll={handleScroll}
       >
-        {isLoading && page > 0 && <div className="loading-indicator">Loading...</div>}
+        {isLoading && page > 0 && <div className="loading-indicator">Loading history...</div>}
+        
+        {messages.length === 0 && !isLoading && (
+            <div className="empty-chat-state">
+                <p>No messages yet. Start the conversation!</p>
+            </div>
+        )}
 
         {messages.map((msg, index) => {
           const isMe = msg.senderId === currentUser.id;
           return (
-            <div key={index} className={`chat-bubble ${isMe ? 'me' : 'other'}`}>
-              {!isMe && <div className="sender-name">{msg.senderName}</div>}
-              <div>{msg.content}</div>
-              <div className="timestamp">{formatTime(msg.timestamp)}</div>
+            <div key={index} className={`message-row ${isMe ? 'me' : 'other'}`}>
+              
+              {!isMe && (
+                  <div className="message-avatar" title={msg.senderName}>
+                      {getInitials(msg.senderName)}
+                  </div>
+              )}
+
+              <div className="chat-bubble-wrapper">
+                  {!isMe && <span className="sender-name-label">{msg.senderName}</span>}
+                  <div className="chat-bubble">
+                      {msg.content}
+                      <span className="timestamp">{formatTime(msg.timestamp)}</span>
+                  </div>
+              </div>
             </div>
           );
         })}
@@ -162,7 +158,7 @@ const ChatBox = ({ eventId, currentUser }: ChatProps) => {
           placeholder="Type a message..."
           className="chat-input"
         />
-        <button onClick={sendMessage} className="send-btn">Send</button>
+        <button onClick={sendMessage} className="send-btn">➤</button>
       </div>
     </div>
   );

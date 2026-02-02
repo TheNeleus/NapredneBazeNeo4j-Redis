@@ -39,7 +39,7 @@ const LocationPicker = ({ onLocationSelect }: Props) => {
   };
 
   return (
-    <MapContainer center={[44.7866, 20.4489]} zoom={13} className="location-picker-map">
+    <MapContainer center={[43.316, 21.894]} zoom={13} className="location-picker-map">
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <MapClickHandler onLocationSelect={handleSelect} position={position} />
     </MapContainer>

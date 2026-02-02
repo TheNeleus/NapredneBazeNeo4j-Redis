@@ -7,9 +7,8 @@ const apiClient = axios.create({
   },
 });
 
-// interceptor: Pre svakog slanja, ubaci token iz localStorage
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('meetup_token');
+  const token = sessionStorage.getItem('meetup_token');
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }

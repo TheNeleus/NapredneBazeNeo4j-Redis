@@ -20,7 +20,7 @@ namespace MeetupBackend.Services
             evt.Id = Guid.NewGuid().ToString();
 
             await using var session = _driver.AsyncSession();
-            
+
             var query = @"
                 MATCH (u:User {id: $creatorId})
                 CREATE (e:Event {
@@ -38,7 +38,7 @@ namespace MeetupBackend.Services
             await session.RunAsync(query, new
             {
                 creatorId = creatorId,
-                
+
                 id = evt.Id,
                 title = evt.Title,
                 description = evt.Description,
@@ -52,45 +52,7 @@ namespace MeetupBackend.Services
 
             return evt;
         }
-
-        public async Task<List<Dictionary<string, object>>> GetAllEvents()
-        {
-            await using var session = _driver.AsyncSession();
-
-            var query = @"
-                MATCH (e:Event)
-                WHERE datetime(e.date) > datetime() 
-                RETURN e.id as id, 
-                    e.title as title, 
-                    e.description as description, 
-                    e.date as date, 
-                    e.category as category,
-                    e.latitude as latitude,
-                    e.longitude as longitude
-                ORDER BY e.date ASC";
-
-            var result = await session.RunAsync(query);
-
-            var events = new List<Dictionary<string, object>>();
-
-            await result.ForEachAsync(record =>
-            {
-                var eventData = new Dictionary<string, object>
-                {
-                    { "id", record["id"].As<string>() },
-                    { "title", record["title"].As<string>() },
-                    { "description", record["description"].As<string>() },
-                    { "date", record["date"].As<string>() },
-                    { "category", record["category"].As<string>() },
-                    { "latitude", record["latitude"].As<double>() },
-                    { "longitude", record["longitude"].As<double>() }
-                };
-                events.Add(eventData);
-            });
-
-            return events;
-        }
-
+        
         public async Task AttendEvent(string userId, string eventId)
         {
             await using var session = _driver.AsyncSession();
@@ -104,7 +66,7 @@ namespace MeetupBackend.Services
             await session.RunAsync(query, new { userId, eventId });
         }
 
-        public async Task<bool> DeleteEvent(string userId, string eventId)
+       public async Task<bool> DeleteEvent(string userId, string eventId)
         {
             await using var session = _driver.AsyncSession();
 
@@ -129,9 +91,52 @@ namespace MeetupBackend.Services
             if (deletedFromNeo4j)
             {
                 await _redisDb.GeoRemoveAsync("events:geo", eventId);
+                return true; 
             }
 
             return false;
+        }
+
+        public async Task<List<Dictionary<string, object>>> GetAllEvents()
+        {
+            await using var session = _driver.AsyncSession();
+
+            var query = @"
+                MATCH (e:Event)
+                WHERE datetime(e.date) > datetime() 
+                OPTIONAL MATCH (u:User)-[:ATTENDING]->(e)
+                OPTIONAL MATCH (creator:User)-[:CREATED]->(e) 
+                RETURN e.id as id, 
+                    e.title as title, 
+                    e.description as description, 
+                    e.date as date, 
+                    e.category as category,
+                    e.latitude as latitude,
+                    e.longitude as longitude,
+                    collect(u.id) as attendees,
+                    creator.id as creatorId";
+
+            var result = await session.RunAsync(query);
+            var events = new List<Dictionary<string, object>>();
+
+            await result.ForEachAsync(record =>
+            {
+                var eventData = new Dictionary<string, object>
+                {
+                    { "id", record["id"].As<string>() },
+                    { "title", record["title"].As<string>() },
+                    { "description", record["description"].As<string>() },
+                    { "date", record["date"].As<string>() },
+                    { "category", record["category"].As<string>() },
+                    { "latitude", record["latitude"].As<double>() },
+                    { "longitude", record["longitude"].As<double>() },
+                    { "attendees", record["attendees"].As<List<string>>() },
+                    { "creatorId", record["creatorId"] != null ? record["creatorId"].As<string>() : "" }
+                };
+                events.Add(eventData);
+            });
+
+            return events;
         }
 
         public async Task<List<Dictionary<string, object>>> GetFriendsEvents(string userId)
@@ -141,14 +146,19 @@ namespace MeetupBackend.Services
             var query = @"
                 MATCH (me:User {id: $userId})-[:FRIEND]->(f:User)-[:ATTENDING]->(e:Event)
                 WHERE datetime(e.date) > datetime()
+                WITH e, count(f) as friendsGoing
+                
+                OPTIONAL MATCH (u:User)-[:ATTENDING]->(e)
+                
                 RETURN e.id as id, 
-                       e.title as title, 
-                       e.description as description, 
-                       e.date as date, 
-                       e.category as category,
-                       e.latitude as latitude,
-                       e.longitude as longitude,
-                       count(f) as friendsGoing
+                    e.title as title, 
+                    e.description as description, 
+                    e.date as date, 
+                    e.category as category,
+                    e.latitude as latitude,
+                    e.longitude as longitude,
+                    friendsGoing,
+                    collect(u.id) as attendees
                 ORDER BY friendsGoing DESC";
 
             var result = await session.RunAsync(query, new { userId });
@@ -164,8 +174,9 @@ namespace MeetupBackend.Services
                     { "description", record["description"].As<string>() },
                     { "date", record["date"].As<string>() },
                     { "friendsGoing", record["friendsGoing"].As<int>() },
-                    { "latitude", record["latitude"].As<double>() }, 
-                    { "longitude", record["longitude"].As<double>() }
+                    { "latitude", record["latitude"].As<double>() },
+                    { "longitude", record["longitude"].As<double>() },
+                    { "attendees", record["attendees"].As<List<string>>() }
                 };
                 recommendations.Add(eventData);
             });
@@ -179,7 +190,6 @@ namespace MeetupBackend.Services
 
             if (geoResults.Length == 0) return new List<Dictionary<string, object>>();
 
-            // eventId-evi su memberi, koordinate value
             var nearbyEventIds = geoResults.Select(r => r.Member.ToString()).ToList();
 
             await using var session = _driver.AsyncSession();
@@ -189,14 +199,18 @@ namespace MeetupBackend.Services
                 MATCH (e:Event)
                 WHERE e.id IN $nearbyEventIds   
                 AND e.category IN u.interests           
-                AND e.date > datetime()                  
+                AND datetime(e.date) > datetime()
+                
+                OPTIONAL MATCH (attendant:User)-[:ATTENDING]->(e)
+
                 RETURN e.id as id, 
                     e.title as title, 
                     e.description as description, 
                     e.date as date, 
                     e.category as category,
                     e.latitude as latitude,
-                    e.longitude as longitude
+                    e.longitude as longitude,
+                    collect(attendant.id) as attendees 
                 ORDER BY e.date ASC";
 
             var result = await session.RunAsync(query, new { userId, nearbyEventIds });
@@ -213,7 +227,8 @@ namespace MeetupBackend.Services
                     { "date", record["date"].As<string>() },
                     { "category", record["category"].As<string>() },
                     { "latitude", record["latitude"].As<double>() },
-                    { "longitude", record["longitude"].As<double>() }
+                    { "longitude", record["longitude"].As<double>() },
+                    { "attendees", record["attendees"].As<List<string>>() } 
                 };
                 recommendations.Add(eventData);
             });
@@ -224,38 +239,35 @@ namespace MeetupBackend.Services
         public async Task<List<Dictionary<string, object>>> GetNearestEvents(double lat, double lon, double radiusKm)
         {
             var geoResults = await _redisDb.GeoRadiusAsync(
-                "events:geo", lon, lat, radiusKm, GeoUnit.Kilometers, -1, Order.Ascending, 
+                "events:geo", lon, lat, radiusKm, GeoUnit.Kilometers, -1, Order.Ascending,
                 GeoRadiusOptions.WithDistance | GeoRadiusOptions.WithCoordinates
             );
 
-            if (geoResults.Length == 0) 
-            {
-                return new List<Dictionary<string, object>>();
-            }
+            if (geoResults.Length == 0) return new List<Dictionary<string, object>>();
 
             var eventDistances = geoResults.ToDictionary(k => k.Member.ToString(), v => v.Distance.Value);
             var eventIds = eventDistances.Keys.ToList();
 
             await using var session = _driver.AsyncSession();
 
-         var query = @"
+            var query = @"
             MATCH (e:Event)
             WHERE e.id IN $eventIds
             AND datetime(e.date) > datetime() 
+            
+            OPTIONAL MATCH (u:User)-[:ATTENDING]->(e)
+
             RETURN e.id as id, 
                 e.title as title, 
                 e.description as description, 
                 e.date as date, 
                 e.category as category,
                 e.latitude as latitude,
-                e.longitude as longitude";
-            
-            string nowString = DateTime.Now.ToString("s");
+                e.longitude as longitude,
+                collect(u.id) as attendees";
 
-            var result = await session.RunAsync(query, new { 
-                eventIds = eventIds, 
-                now = nowString     
-            });
+            var result = await session.RunAsync(query, new { eventIds });
+            
             var nearestEvents = new List<Dictionary<string, object>>();
 
             await result.ForEachAsync(record =>
@@ -268,7 +280,8 @@ namespace MeetupBackend.Services
                         { "id", id },
                         { "title", record["title"].As<string>() },
                         { "date", record["date"].As<string>() },
-                        { "distanceKm", Math.Round(eventDistances[id], 2) } 
+                        { "distanceKm", Math.Round(eventDistances[id], 2) },
+                        { "attendees", record["attendees"].As<List<string>>() }
                     };
                     nearestEvents.Add(eventData);
                 }
@@ -280,7 +293,6 @@ namespace MeetupBackend.Services
         {
             await using var session = _driver.AsyncSession();
 
-            // Upit proverava da li je korisnik Admin ili Kreator pre nego što uradi SET
             var query = @"
                 MATCH (u:User {id: $userId})
                 MATCH (e:Event {id: $eventId})
@@ -310,16 +322,41 @@ namespace MeetupBackend.Services
 
             if (await result.FetchAsync())
             {
-                
-                await _redisDb.GeoAddAsync("events:geo", 
+
+                await _redisDb.GeoAddAsync("events:geo",
                     new GeoEntry(updatedEvent.Longitude, updatedEvent.Latitude, eventId));
 
-                
-                updatedEvent.Id = eventId; 
+
+                updatedEvent.Id = eventId;
                 return updatedEvent;
             }
 
             return null;
+        }
+        
+        public async Task<List<Dictionary<string, object>>> GetEventAttendees(string eventId)
+        {
+            await using var session = _driver.AsyncSession();
+
+            var query = @"
+                MATCH (u:User)-[:ATTENDING]->(e:Event {id: $eventId})
+                RETURN u.id as id, u.name as name, u.email as email";
+
+            var result = await session.RunAsync(query, new { eventId });
+
+            var attendees = new List<Dictionary<string, object>>();
+
+            await result.ForEachAsync(record =>
+            {
+                attendees.Add(new Dictionary<string, object>
+                {
+                    { "id", record["id"].As<string>() },
+                    { "name", record["name"].As<string>() },
+                    { "email", record["email"].As<string>() }
+                });
+            });
+
+            return attendees;
         }
     }
 }

@@ -7,8 +7,6 @@ export const register = async (userData: User): Promise<User> => {
 };
 
 export const login = async (email: string): Promise<LoginResponse> => {
-  // Backend ocekuje JSON string, npr: "filip@email.com" (sa navodnicima)
-  // Zato koristimo JSON.stringify da pretvorimo obican string u JSON string.
   const response = await apiClient.post<LoginResponse>('/users/login', JSON.stringify(email));
   return response.data;
 };
