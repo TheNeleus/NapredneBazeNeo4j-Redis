@@ -37,6 +37,7 @@ docker-compose up -d
 Ovo će podići Neo4j (port 7474/7687) i Redis (port 6379).
 
 ### 3. Pokretanje Backenda
+
 Otvorite projekat1.sln u Visual Studiju.
 
 Pritisnite Run (Play dugme) ili F5.
@@ -44,6 +45,7 @@ Pritisnite Run (Play dugme) ili F5.
 Backend će raditi na https://localhost:7000.
 
 ### 4. Pokretanje Frontenda
+
 Otvorite terminal u folderu meetupfrontend:
 
 Bash
