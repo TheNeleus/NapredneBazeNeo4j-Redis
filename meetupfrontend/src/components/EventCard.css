@@ -24,6 +24,9 @@
     color: white;
     font-weight: bold;
     text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
 }
 
 .card-content {
@@ -40,11 +43,35 @@
     color: #333;
 }
 
+.meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.meta-row p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .event-date {
     color: #d48228;
     font-weight: bold;
-    font-size: 0.9rem;
-    margin-bottom: 8px;
+}
+
+.event-distance {
+    color: #555;
+}
+
+.event-friends {
+    color: #0098ab;
+    font-weight: 500;
 }
 
 .event-desc-short {
@@ -117,6 +144,49 @@
 
 .edit-card-btn:hover {
     background: #0098ab;
+    color: white;
+    transform: scale(1.1);
+}
+
+.leave-btn-small {
+    width: 100%;
+    padding: 10px;
+    background-color: white;
+    color: #ff4d4d;
+    border: 1px solid #ff4d4d;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: auto; 
+}
+
+.leave-btn-small:hover {
+    background-color: #fff5f5; 
+}
+
+.admin-users-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px; 
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #6c5ce7; 
+    color: #6c5ce7;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 25; 
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.admin-users-btn:hover {
+    background: #6c5ce7;
     color: white;
     transform: scale(1.1);
 }

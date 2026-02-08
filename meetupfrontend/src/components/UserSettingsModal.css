@@ -1,0 +1,186 @@
+
+.settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.settings-modal {
+    background: white;
+    width: 500px;
+    max-width: 90%;
+    border-radius: 12px;
+    padding: 25px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.settings-modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+}
+
+.settings-tabs {
+    display: flex;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.settings-tabs button {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.settings-tabs button.active {
+    color: #0098ab;
+    border-bottom: 2px solid #0098ab;
+    font-weight: bold;
+}
+
+.settings-content {
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-form label {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+.profile-form input, 
+.profile-form textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.profile-form textarea {
+    resize: vertical;
+}
+
+.interests-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.interest-tag {
+    padding: 6px 12px;
+    background-color: #f0f2f5;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.interest-tag:hover {
+    background-color: #e4e6eb;
+}
+
+.interest-tag.selected {
+    background-color: #e6f7fa;
+    color: #0098ab;
+    border-color: #0098ab;
+    font-weight: 600;
+}
+
+.save-btn {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #0098ab;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.save-btn:hover {
+    background-color: #007c8d;
+}
+
+.save-btn:disabled {
+    background-color: #ccc;
+}
+
+.friends-form p {
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.add-friend-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.add-friend-box input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.add-btn {
+    padding: 10px 20px;
+    background-color: #0098ab;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.add-btn:hover {
+    background-color: #007c8d;
+}
+
+.status-msg {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+}

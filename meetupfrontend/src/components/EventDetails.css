@@ -31,7 +31,7 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  background: #f0f2f5;
+  background: transparent;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -39,117 +39,87 @@
   align-items: center;
   justify-content: center;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  color: #555;
+  color: #999;
   transition: all 0.2s;
 }
 
 .close-btn:hover {
-  background: #e4e6e9;
   color: #333;
+  background: #f0f2f5;
+}
+
+
+.simple-header {
+  margin-top: 10px;
+  margin-bottom: 20px;
 }
 
 .details-content h2 {
-  margin-top: 10px;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
   color: #1a1a1a;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
+  font-weight: 700;
   padding: 0 30px; 
 }
 
-
-.event-category {
-  display: inline-block; 
-  background-color: #eef0f2;
-  color: #555;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem; 
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 12px;
-  align-self: center; 
+.simple-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #0098ab; 
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .event-description {
-  color: #444;
-  line-height: 1.4;
-  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+  font-size: 1rem;
   margin-bottom: 16px;
   max-width: 90%; 
   margin-left: auto;
   margin-right: auto;
 }
 
-
-.event-time {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #f7f8fa;
-  padding: 8px 16px;
-  border-radius: 20px; 
-  color: #333;
-  font-size: 0.85rem;
-  border: 1px solid #edf0f2;
-  margin: 0 auto 10px auto; 
-  width: fit-content; 
-}
-
 .details-divider {
-  margin: 16px 0;
+  margin: 10px 0 20px 0;
   border: 0;
-  border-top: 1px solid #eaeaea;
+  border-top: 1px solid #f0f0f0;
 }
 
 .chat-locked-message {
-  padding: 20px 16px;
+  padding: 30px 20px;
   color: #666;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 1px dashed #d0d7de;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  border: 1px dashed #e0e0e0;
   display: flex;
   flex-direction: column;
   align-items: center; 
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .chat-locked-message h3 {
-  margin: 0 0 5px 0;
+  margin: 0 0 8px 0;
   color: #444;
   font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px; 
 }
 
 .chat-locked-message p {
   margin: 0;
-  font-size: 0.85rem;
-  color: #777;
+  font-size: 0.9rem;
+  color: #888;
 }
 
 .chat-section-wrapper {
   width: 100%;             
   text-align: left;        
-  margin-top: 10px;
   flex: 1;                 
-  min-height: 300px;       
+  min-height: 350px;       
   display: flex;
   flex-direction: column;
-}
-
-.chat-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-
-.chat-section-wrapper .chat-locked-message {
-    margin-top: 20px;
-    text-align: center; 
 }

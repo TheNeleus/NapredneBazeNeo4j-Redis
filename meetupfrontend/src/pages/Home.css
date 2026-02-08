@@ -20,6 +20,7 @@ body {
 .logo {
   color: #f64060;
   margin: 0;
+  cursor: pointer;
 }
 
 .nav-right {
@@ -29,19 +30,21 @@ body {
 }
 
 .create-btn {
-  background: white;
+  background-color: transparent; 
   color: #0098ab;
-  border: 1px solid #0098ab;
+  border: 2px solid #0098ab;  
   padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+  border-radius: 20px;      
+  font-size: 0.9rem;            
   font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
 .create-btn:hover {
   background-color: #e6f7fa;
 }
+
 
 .add-friend-nav-btn {
   background-color: transparent;
@@ -71,12 +74,12 @@ body {
 .user-avatar {
   width: 35px;
   height: 35px;
-  background: #e1e1e1;
+  background: #ffaa00;
+  color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
 }
 
 .user-dropdown {

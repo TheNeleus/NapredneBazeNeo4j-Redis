@@ -1,4 +1,5 @@
 using MeetupBackend.Models;
+using MeetupBackend.DTOs;
 using Neo4j.Driver;
 using StackExchange.Redis;
 
@@ -66,6 +67,28 @@ namespace MeetupBackend.Services
             await session.RunAsync(query, new { userId, eventId });
         }
 
+        public async Task LeaveEvent(string userId, string eventId)
+        {
+            await using var session = _driver.AsyncSession();
+
+            var query = @"
+                MATCH (u:User {id: $userId})-[r:ATTENDING]->(e:Event {id: $eventId})
+                DELETE r";
+
+            await session.RunAsync(query, new { userId, eventId });
+        }
+
+        public async Task KickUserFromEvent(string eventId, string targetUserId)
+        {
+            await using var session = _driver.AsyncSession();
+            
+            var query = @"
+                MATCH (u:User {id: $targetUserId})-[r:ATTENDING]->(e:Event {id: $eventId})
+                DELETE r";
+
+            await session.RunAsync(query, new { targetUserId, eventId });
+        }
+
        public async Task<bool> DeleteEvent(string userId, string eventId)
         {
             await using var session = _driver.AsyncSession();
@@ -97,7 +120,7 @@ namespace MeetupBackend.Services
             return false;
         }
 
-        public async Task<List<Dictionary<string, object>>> GetAllEvents()
+        public async Task<List<EventResponseDto>> GetAllEvents()
         {
             await using var session = _driver.AsyncSession();
 
@@ -117,29 +140,29 @@ namespace MeetupBackend.Services
                     creator.id as creatorId";
 
             var result = await session.RunAsync(query);
-            var events = new List<Dictionary<string, object>>();
+            var events = new List<EventResponseDto>();
 
             await result.ForEachAsync(record =>
             {
-                var eventData = new Dictionary<string, object>
+                var dto = new EventResponseDto
                 {
-                    { "id", record["id"].As<string>() },
-                    { "title", record["title"].As<string>() },
-                    { "description", record["description"].As<string>() },
-                    { "date", record["date"].As<string>() },
-                    { "category", record["category"].As<string>() },
-                    { "latitude", record["latitude"].As<double>() },
-                    { "longitude", record["longitude"].As<double>() },
-                    { "attendees", record["attendees"].As<List<string>>() },
-                    { "creatorId", record["creatorId"] != null ? record["creatorId"].As<string>() : "" }
+                    Id = record["id"].As<string>(),
+                    Title = record["title"].As<string>(),
+                    Description = record["description"].As<string>(),
+                    Date = DateTime.Parse(record["date"].As<string>()),
+                    Category = record["category"].As<string>(),
+                    Latitude = record["latitude"].As<double>(),
+                    Longitude = record["longitude"].As<double>(),
+                    Attendees = record["attendees"].As<List<string>>(),
+                    CreatorId = record["creatorId"] != null ? record["creatorId"].As<string>() : string.Empty
                 };
-                events.Add(eventData);
+                events.Add(dto);
             });
 
             return events;
         }
 
-        public async Task<List<Dictionary<string, object>>> GetFriendsEvents(string userId)
+        public async Task<List<EventResponseDto>> GetFriendsEvents(string userId)
         {
             await using var session = _driver.AsyncSession();
 
@@ -163,32 +186,32 @@ namespace MeetupBackend.Services
 
             var result = await session.RunAsync(query, new { userId });
 
-            var recommendations = new List<Dictionary<string, object>>();
+            var recommendations = new List<EventResponseDto>();
 
             await result.ForEachAsync(record =>
             {
-                var eventData = new Dictionary<string, object>
+                var dto = new EventResponseDto
                 {
-                    { "id", record["id"].As<string>() },
-                    { "title", record["title"].As<string>() },
-                    { "description", record["description"].As<string>() },
-                    { "date", record["date"].As<string>() },
-                    { "friendsGoing", record["friendsGoing"].As<int>() },
-                    { "latitude", record["latitude"].As<double>() },
-                    { "longitude", record["longitude"].As<double>() },
-                    { "attendees", record["attendees"].As<List<string>>() }
+                    Id = record["id"].As<string>(),
+                    Title = record["title"].As<string>(),
+                    Description = record["description"].As<string>(),
+                    Date = DateTime.Parse(record["date"].As<string>()),
+                    FriendsGoing = record["friendsGoing"].As<int>(),
+                    Latitude = record["latitude"].As<double>(),
+                    Longitude = record["longitude"].As<double>(),
+                    Attendees = record["attendees"].As<List<string>>()
                 };
-                recommendations.Add(eventData);
+                recommendations.Add(dto);
             });
 
             return recommendations;
         }
 
-        public async Task<List<Dictionary<string, object>>> GetRecommendedEvents(string userId, double lat, double lon, double radiusKm)
+        public async Task<List<EventResponseDto>> GetRecommendedEvents(string userId, double lat, double lon, double radiusKm)
         {
             var geoResults = await _redisDb.GeoRadiusAsync("events:geo", lon, lat, radiusKm, GeoUnit.Kilometers);
 
-            if (geoResults.Length == 0) return new List<Dictionary<string, object>>();
+            if (geoResults.Length == 0) return new List<EventResponseDto>();
 
             var nearbyEventIds = geoResults.Select(r => r.Member.ToString()).ToList();
 
@@ -215,35 +238,35 @@ namespace MeetupBackend.Services
 
             var result = await session.RunAsync(query, new { userId, nearbyEventIds });
 
-            var recommendations = new List<Dictionary<string, object>>();
+            var recommendations = new List<EventResponseDto>();
 
             await result.ForEachAsync(record =>
             {
-                var eventData = new Dictionary<string, object>
+                var dto = new EventResponseDto
                 {
-                    { "id", record["id"].As<string>() },
-                    { "title", record["title"].As<string>() },
-                    { "description", record["description"].As<string>() },
-                    { "date", record["date"].As<string>() },
-                    { "category", record["category"].As<string>() },
-                    { "latitude", record["latitude"].As<double>() },
-                    { "longitude", record["longitude"].As<double>() },
-                    { "attendees", record["attendees"].As<List<string>>() } 
+                    Id = record["id"].As<string>(),
+                    Title = record["title"].As<string>(),
+                    Description = record["description"].As<string>(),
+                    Date = DateTime.Parse(record["date"].As<string>()),
+                    Category = record["category"].As<string>(),
+                    Latitude = record["latitude"].As<double>(),
+                    Longitude = record["longitude"].As<double>(),
+                    Attendees = record["attendees"].As<List<string>>()
                 };
-                recommendations.Add(eventData);
+                recommendations.Add(dto);
             });
 
             return recommendations;
         }
 
-        public async Task<List<Dictionary<string, object>>> GetNearestEvents(double lat, double lon, double radiusKm)
+        public async Task<List<EventResponseDto>> GetNearestEvents(double lat, double lon, double radiusKm)
         {
             var geoResults = await _redisDb.GeoRadiusAsync(
                 "events:geo", lon, lat, radiusKm, GeoUnit.Kilometers, -1, Order.Ascending,
                 GeoRadiusOptions.WithDistance | GeoRadiusOptions.WithCoordinates
             );
 
-            if (geoResults.Length == 0) return new List<Dictionary<string, object>>();
+            if (geoResults.Length == 0) return new List<EventResponseDto>();
 
             var eventDistances = geoResults.ToDictionary(k => k.Member.ToString(), v => v.Distance.Value);
             var eventIds = eventDistances.Keys.ToList();
@@ -268,25 +291,25 @@ namespace MeetupBackend.Services
 
             var result = await session.RunAsync(query, new { eventIds });
             
-            var nearestEvents = new List<Dictionary<string, object>>();
+            var nearestEvents = new List<EventResponseDto>();
 
             await result.ForEachAsync(record =>
             {
                 string id = record["id"].As<string>();
                 if (eventDistances.ContainsKey(id))
                 {
-                    var eventData = new Dictionary<string, object>
+                    var dto = new EventResponseDto
                     {
-                        { "id", id },
-                        { "title", record["title"].As<string>() },
-                        { "date", record["date"].As<string>() },
-                        { "distanceKm", Math.Round(eventDistances[id], 2) },
-                        { "attendees", record["attendees"].As<List<string>>() }
+                        Id = id,
+                        Title = record["title"].As<string>(),
+                        Date = DateTime.Parse(record["date"].As<string>()),
+                        DistanceKm = Math.Round(eventDistances[id], 2),
+                        Attendees = record["attendees"].As<List<string>>()
                     };
-                    nearestEvents.Add(eventData);
+                    nearestEvents.Add(dto);
                 }
             });
-            return nearestEvents.OrderBy(e => e["distanceKm"]).ToList();
+            return nearestEvents.OrderBy(e => e.DistanceKm).ToList();
         }
 
         public async Task<Event?> UpdateEvent(string userId, string eventId, Event updatedEvent)

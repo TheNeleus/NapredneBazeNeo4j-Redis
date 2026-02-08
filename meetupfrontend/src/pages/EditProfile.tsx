@@ -7,13 +7,12 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
 
-
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  const availableInterests = ['Tech', 'Sport', 'Music', 'Art', 'Travel', 'Food', 'Gaming'];
+  const availableInterests = ['Tech', 'Sport', 'Music', 'Art', 'Travel', 'Food', 'Gaming', 'Social'];
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('meetup_user');
@@ -38,8 +37,7 @@ const EditProfile = () => {
     if (!user) return;
     setIsSaving(true);
     try {
-      await updateUserProfile(user.id, { 
-          id: user.id,
+      await updateUserProfile(user.id, {
           name, 
           email: user.email, 
           bio, 

@@ -1,6 +1,7 @@
 using MeetupBackend.Models;
 using MeetupBackend.Services;
 using Microsoft.AspNetCore.SignalR;
+using MeetupBackend.DTOs;
 
 namespace MeetupBackend.Hubs
 {
@@ -48,14 +49,14 @@ namespace MeetupBackend.Hubs
             var user = Context.Items["User"] as User;
             if (user == null) return;
 
-            var msg = new EventChatMessage
+            var msg = new EventChatMessage()
             {
                 EventId = eventId,
                 SenderId = user.Id,
                 SenderName = user.Name,
-                Content = content,
-                Timestamp = DateTime.UtcNow
+                Content = content
             };
+            
             await _chatService.SendMessage(msg);
         }
     }

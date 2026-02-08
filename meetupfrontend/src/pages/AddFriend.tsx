@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addFriendByEmail } from '../api/userService';
-import './AddFriend.css'; // Koristićemo zajednički CSS fajl za lep izgled
+import './AddFriend.css';
 
 const AddFriend = () => {
   const navigate = useNavigate();

@@ -17,10 +17,14 @@ const EventDetails = ({ event, currentUser, onClose }: Props) => {
       })
     : false;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('sr-RS', {
-      day: 'numeric', month: 'long', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+  const formatHeaderDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('sr-RS', {
+      day: 'numeric', 
+      month: 'numeric',
+      year: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit'
     });
   };
 
@@ -29,13 +33,16 @@ const EventDetails = ({ event, currentUser, onClose }: Props) => {
       <div className="details-content">
         <button onClick={onClose} className="close-btn">✖</button>
 
-        <h2>{event.title}</h2>
-        <span className="event-category">{event.category || 'Event'}</span>
-        <p className="event-description">{event.description}</p>
-        
-        <div className="event-time">
-          <strong>🕒 Time:</strong> {formatDate(event.date)}
+        <div className="simple-header">
+            <h2>{event.title}</h2>
+            <div className="simple-time">
+                 🕒 {formatHeaderDate(event.date)}
+            </div>
         </div>
+
+        {event.description && (
+            <p className="event-description">{event.description}</p>
+        )}
         
         <hr className="details-divider"/>
 

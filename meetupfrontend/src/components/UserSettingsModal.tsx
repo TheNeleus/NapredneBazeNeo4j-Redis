@@ -20,7 +20,7 @@ const UserSettingsModal = ({ user, onClose, onUpdateUser, initialTab = 'profile'
   const [friendEmail, setFriendEmail] = useState('');
   const [friendStatus, setFriendStatus] = useState('');
 
-  const availableInterests = ['Tech', 'Sport', 'Music', 'Art', 'Travel', 'Food', 'Gaming'];
+  const availableInterests = ['Tech', 'Sport', 'Music', 'Art', 'Travel', 'Food', 'Gaming', 'Social'];
 
   const toggleInterest = (interest: string) => {
     setInterests(prev => 
@@ -31,8 +31,7 @@ const UserSettingsModal = ({ user, onClose, onUpdateUser, initialTab = 'profile'
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      await updateUserProfile(user.id, { 
-          id: user.id,
+      await updateUserProfile(user.id, {
           name, 
           email: user.email, 
           bio, 
@@ -61,9 +60,9 @@ const UserSettingsModal = ({ user, onClose, onUpdateUser, initialTab = 'profile'
         setFriendStatus('✅ Friend added successfully!');
         setFriendEmail('');
     } catch (error: any) {
-        if(error.response?.status === 404) setFriendStatus('❌ User not found.');
-        else if(error.response?.status === 400) setFriendStatus(`❌ ${error.response.data}`);
-        else setFriendStatus('❌ Error adding friend.');
+        if(error.response?.status === 404) setFriendStatus('User not found.');
+        else if(error.response?.status === 400) setFriendStatus(`${error.response.data}`);
+        else setFriendStatus('Error adding friend.');
     }
   };
 

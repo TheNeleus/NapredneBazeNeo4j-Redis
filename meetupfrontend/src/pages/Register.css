@@ -18,12 +18,26 @@
   border-radius: 4px;
 }
 
+.register-textarea {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  resize: vertical;
+}
+
 .interests-section {
   text-align: left;
   background: #f9f9f9;
   padding: 10px;
   border-radius: 4px;
   border: 1px solid #eee;
+}
+
+.interests-title {
+  margin: 0 0 5px 0;
+  font-weight: bold;
 }
 
 .checkbox-group {
@@ -44,7 +58,7 @@
 .register-button {
   padding: 12px;
   cursor: pointer;
-  background-color: #28a745; /* Zelena za registraciju */
+  background-color: #0098ab; 
   color: white;
   border: none;
   border-radius: 4px;
@@ -54,7 +68,7 @@
 }
 
 .register-button:hover {
-  background-color: #218838;
+  background-color: #007c8d;
 }
 
 .login-link {
@@ -66,4 +80,9 @@
   color: #646cff;
   text-decoration: none;
   font-weight: bold;
+}
+
+.error-msg {
+    color: #ff4d4d;
+    margin-top: 10px;
 }

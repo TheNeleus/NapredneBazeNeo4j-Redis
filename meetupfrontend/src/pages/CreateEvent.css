@@ -17,9 +17,28 @@
   font-family: inherit;
 }
 
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #0098ab;
+}
+
 .date-time-row {
   display: flex;
   gap: 1rem;
+}
+
+.date-time-input {
+    flex: 1;
+}
+
+.category-label {
+    font-weight: 600; 
+    font-size: 0.9rem; 
+    margin-bottom: -5px;
+}
+
+.location-label {
+    margin: 0 0 10px 0;
 }
 
 .location-box {
@@ -30,12 +49,18 @@
 
 .submit-btn {
   padding: 15px;
-  background: #28a745;
+  background: #0098ab; 
   color: white;
   border: none;
   cursor: pointer;
   font-size: 16px;
   border-radius: 4px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+    background-color: #007c8d;
 }
 
 .cancel-btn {
@@ -43,4 +68,10 @@
   border: none;
   cursor: pointer;
   color: #666;
+  margin-top: 10px;
+  transition: color 0.2s;
+}
+
+.cancel-btn:hover {
+    color: #333;
 }

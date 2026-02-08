@@ -1,0 +1,51 @@
+.attendees-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.6);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 2000;
+}
+
+.attendees-modal {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.attendees-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;
+}
+
+.attendees-header h3 { margin: 0; }
+
+.close-attendees-btn {
+    background: none; border: none; font-size: 1.2rem; cursor: pointer;
+}
+
+.attendees-list {
+    list-style: none; padding: 0; margin: 0;
+    overflow-y: auto;
+}
+
+.attendee-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px; border-bottom: 1px solid #f0f0f0;
+}
+
+.attendee-info { display: flex; flex-direction: column; text-align: left; }
+.attendee-name { font-weight: bold; font-size: 0.95rem; }
+.attendee-email { font-size: 0.8rem; color: #777; }
+
+.kick-btn {
+    background-color: #ffeff0; color: #d63031;
+    border: 1px solid #fab1b0; padding: 5px 10px;
+    border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.kick-btn:hover { background-color: #d63031; color: white; }

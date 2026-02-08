@@ -32,6 +32,8 @@ Potrebno je imati instalirano:
 U root folderu projekta pokrenite:
 ```bash
 docker-compose up -d
+```
+
 Ovo će podići Neo4j (port 7474/7687) i Redis (port 6379).
 
 ### 3. Pokretanje Backenda

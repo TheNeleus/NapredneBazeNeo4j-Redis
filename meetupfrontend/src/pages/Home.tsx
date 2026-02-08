@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEvents, getFriendsEvents, getRecommendedEvents, attendEvent, deleteEvent } from '../api/eventService';
+import { getEvents, getFriendsEvents, getRecommendedEvents, attendEvent, deleteEvent, leaveEvent } from '../api/eventService';
 import type { MeetupEvent } from '../models/Event';
 import EventDetails from '../components/EventDetails';
 import EventCard from '../components/EventCard';
@@ -62,10 +62,14 @@ const Home = () => {
   }, [filterMode, radius, userLocation]); 
 
   useEffect(() => {
-    const results = events.filter(ev => 
-      ev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ev.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let results = events;
+
+    if (searchTerm) {
+        results = results.filter(ev => 
+            ev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ev.description.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }
     setFilteredEvents(results);
   }, [searchTerm, events]);
 
@@ -84,6 +88,24 @@ const Home = () => {
       console.error("Greška pri učitavanju događaja:", error);
     }
   };
+
+  const handleToggleAttend = async (event: MeetupEvent, isAttending: boolean) => {
+  try {
+    if (isAttending) {
+      if (window.confirm(`Are you sure you want to leave "${event.title}"?`)) {
+          await leaveEvent(event.id);
+      } else {
+          return;
+      }
+    } else {
+        await attendEvent(event.id);
+    }
+    loadEvents(filterMode); 
+    } catch (error) {
+      console.error("Action failed:", error);
+      alert("Failed to update attendance.");
+  }
+};
 
   const handleFilterChange = (mode: 'all' | 'recommended' | 'friends') => {
     setFilterMode(mode);
@@ -150,8 +172,8 @@ const Home = () => {
     <div className="home-container">
       <nav className="top-nav">
         <div className="nav-left">
-          <h2 className="logo" onClick={() => {setActiveChatEvent(null); setViewMode('list')}} style={{cursor: 'pointer'}}>
-            MeetupApp
+          <h2 className="logo" onClick={() => {setActiveChatEvent(null); setViewMode('list')}}>
+            MeetApp
           </h2>
         </div>
         
@@ -249,7 +271,10 @@ const Home = () => {
           ) : (
             <>
               <div className="feed-header">
-                <h2>{filterMode === 'recommended' ? `Events within ${radius}km` : filterMode === 'friends' ? 'Events Friends Are Going To' : 'All Upcoming Events'}</h2>
+                <h2>
+                     {filterMode === 'recommended' ? `Events within ${radius}km` : 
+                     filterMode === 'friends' ? 'Events Friends Are Going To' : 'All Upcoming Events'}
+                </h2>
                 <span className="results-count">{filteredEvents.length} events found</span>
               </div>
 
@@ -260,13 +285,15 @@ const Home = () => {
                     event={event} 
                     currentUser={user} 
                     onClick={() => handleEventClick(event)}
-                    onAttend={() => handleAttendFromCard(event)}
+                    onAttend={(isAttending) => handleToggleAttend(event, isAttending)}
                     onDelete={() => handleDeleteEvent(event.id)} 
                     onEdit={handleEditEvent}
                   />
                 ))}
                 {filteredEvents.length === 0 && (
-                  <div className="empty-state">{filterMode === 'recommended' ? `No events found within ${radius}km.` : "No events found."}</div>
+                  <div className="empty-state">
+                      {filterMode === 'recommended' ? `No events found within ${radius}km.` : "No events found."}
+                  </div>
                 )}
               </div>
             </>

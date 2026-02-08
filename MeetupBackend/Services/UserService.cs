@@ -17,6 +17,12 @@ namespace MeetupBackend.Services
 
         public async Task<User> CreateUser(User user)
         {
+            var existing = await GetUserByEmail(user.Email);
+            if (existing != null)
+            {
+                throw new InvalidOperationException("Email already in use.");
+            }
+
             user.Id = Guid.NewGuid().ToString();
 
             user.Role = "User";
@@ -28,12 +34,13 @@ namespace MeetupBackend.Services
                     id: $id, 
                     name: $name, 
                     email: $email, 
-                    interests: $interests
+                    interests: $interests,
+                    bio: $bio
                 }) 
                 WITH u
                 MERGE (r:Role {name: $roleName})
                 MERGE (u)-[:HAS_ROLE]->(r)
-                RETURN u.id as id, u.name as name, u.email as email, u.interests as interests, r.name as role";
+                RETURN u.id as id, u.name as name, u.email as email, u.interests as interests, u.bio as bio, r.name as role";
 
             var result = await session.RunAsync(query, new
             {
@@ -41,6 +48,7 @@ namespace MeetupBackend.Services
                 name = user.Name,
                 email = user.Email,
                 interests = user.Interests,
+                bio = user.Bio,
                 roleName = user.Role
             });
 
@@ -52,6 +60,7 @@ namespace MeetupBackend.Services
                 Name = record["name"].As<string>(),
                 Email = record["email"].As<string>(),
                 Interests = record["interests"].As<List<string>>(),
+                Bio = record["bio"].As<string>(),
                 Role = record["role"].As<string>()
             };
         }

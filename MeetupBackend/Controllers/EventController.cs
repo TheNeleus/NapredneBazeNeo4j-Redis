@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MeetupBackend.Models;
 using MeetupBackend.Services;
+using MeetupBackend.DTOs;
 
 namespace MeetupBackend.Controllers
 {
@@ -18,7 +19,7 @@ namespace MeetupBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateEvent([FromBody] Event evt)
+        public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto createDto)
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
@@ -29,9 +30,19 @@ namespace MeetupBackend.Controllers
                 return Unauthorized("Your session expired. Log in again.");
             }
 
+            var evt = new Event
+            {
+                Title = createDto.Title,
+                Description = createDto.Description,
+                Date = createDto.Date,
+                Category = createDto.Category,
+                Latitude = createDto.Latitude,
+                Longitude = createDto.Longitude
+            };
+
             await _eventService.CreateEvent(evt, userId);
 
-            return Ok("Event is created!");
+            return Ok(MapEventToDto(evt, userId));
         }
 
         [HttpGet]
@@ -54,6 +65,40 @@ namespace MeetupBackend.Controllers
 
             await _eventService.AttendEvent(userId, eventId.Trim());
             return Ok("Attending successful!");
+        }
+
+        [HttpPost("{eventId}/leave")]
+        public async Task<IActionResult> LeaveEvent(string eventId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            string? userId = await _userService.GetUserIdFromSession(token);
+
+            if (userId == null)
+            {
+                return Unauthorized("Session has expired.");
+            }
+
+            await _eventService.LeaveEvent(userId, eventId.Trim());
+            return Ok("Successfully left the event!");
+        }
+
+        [HttpPost("{eventId}/kick/{userId}")]
+        public async Task<IActionResult> KickUser(string eventId, string userId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            
+            var uId = await _userService.GetUserIdFromSession(token);
+            if(uId == null) return Unauthorized("Session expired.");
+
+            var currentUser = await _userService.GetUserById(uId);
+            
+            if (currentUser == null || currentUser.Role != "Admin")
+            {
+                return Unauthorized("Only Admins can kick users.");
+            }
+
+            await _eventService.KickUserFromEvent(eventId, userId);
+            return Ok("User kicked successfully.");
         }
 
         [HttpDelete("{eventId}")]
@@ -120,12 +165,22 @@ namespace MeetupBackend.Controllers
         }
 
         [HttpPut("{eventId}")]
-        public async Task<IActionResult> UpdateEvent(string eventId, [FromBody] Event evt)
+        public async Task<IActionResult> UpdateEvent(string eventId, [FromBody] UpdateEventDto updateDto)
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? userId = await _userService.GetUserIdFromSession(token);
 
             if (userId == null) return Unauthorized("Session expired.");
+
+            var evt = new Event
+            {
+                Title = updateDto.Title ?? string.Empty,
+                Description = updateDto.Description ?? string.Empty,
+                Date = updateDto.Date ?? DateTime.MinValue,
+                Category = updateDto.Category ?? string.Empty,
+                Latitude = updateDto.Latitude ?? 0,
+                Longitude = updateDto.Longitude ?? 0
+            };
 
             var updatedEvent = await _eventService.UpdateEvent(userId, eventId, evt);
 
@@ -148,6 +203,22 @@ namespace MeetupBackend.Controllers
 
             var attendees = await _eventService.GetEventAttendees(eventId);
             return Ok(attendees);
+        }
+
+        private EventResponseDto MapEventToDto(Event evt, string creatorId = "")
+        {
+            return new EventResponseDto
+            {
+                Id = evt.Id,
+                Title = evt.Title,
+                Description = evt.Description,
+                Date = evt.Date,
+                Category = evt.Category,
+                Latitude = evt.Latitude,
+                Longitude = evt.Longitude,
+                CreatorId = creatorId,
+                Attendees = new List<string>()
+            };
         }
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MeetupBackend.Models;
 using MeetupBackend.Services;
+using MeetupBackend.DTOs;
 
 namespace MeetupBackend.Controllers
 {
@@ -16,20 +17,36 @@ namespace MeetupBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] User user)
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createUserDto)
         {
-            var createdUser = await _userService.CreateUser(user);
-            return CreatedAtAction(nameof(CreateUser), new { id = createdUser.Id }, createdUser);
+            var user = new User
+            {
+                Name = createUserDto.Name,
+                Email = createUserDto.Email,
+                Interests = createUserDto.Interests,
+                Bio = createUserDto.Bio
+            };
+
+            try
+            {
+                var createdUser = await _userService.CreateUser(user);
+                return CreatedAtAction(nameof(CreateUser), new { id = createdUser.Id }, MapToDto(createdUser));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] string email)
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var user = await _userService.GetUserByEmail(email);
+            var user = await _userService.GetUserByEmail(loginDto.Email);
             if (user == null) return Unauthorized("User not found.");
 
             string token = await _userService.CreateSession(user.Id);
-            return Ok(new { Token = token, User = user });
+            
+            return Ok(new { Token = token, User = MapToDto(user) });
         }
 
         [HttpPost("logout")]
@@ -45,9 +62,8 @@ namespace MeetupBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] User userUpdates)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto updateDto)
         {
-            
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? sessionUserId = await _userService.GetUserIdFromSession(token);
 
@@ -56,38 +72,52 @@ namespace MeetupBackend.Controllers
                 return Unauthorized("Invalid session or user mismatch.");
             }
 
-            userUpdates.Id = id; 
+            var userUpdates = new User
+            {
+                Id = id,
+                Name = updateDto.Name ?? string.Empty,
+                Email = updateDto.Email ?? string.Empty,
+                Bio = updateDto.Bio ?? string.Empty,
+                Interests = updateDto.Interests ?? new List<string>()
+            };
 
             var updatedUser = await _userService.UpdateUser(id, userUpdates);
 
-            if (updatedUser != null) return Ok(updatedUser);
+            if (updatedUser != null) 
+            {
+                return Ok(MapToDto(updatedUser));
+            }
+            
             return NotFound("User not found.");
         }
         
         [HttpPost("{id}/friend")]
-        public async Task<IActionResult> AddFriend(string id, [FromBody] Dictionary<string, string> body)
+        public async Task<IActionResult> AddFriend(string id, [FromBody] AddFriendDto dto)
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             string? sessionUserId = await _userService.GetUserIdFromSession(token);
 
             if (sessionUserId == null || sessionUserId != id) return Unauthorized("Unauthorized.");
 
-            if (body == null || !body.ContainsKey("email"))
-            {
-                return BadRequest("Email is required in request body.");
-            }
-
-            string email = body["email"];
-
-            if (string.IsNullOrEmpty(email)) return BadRequest("Email cannot be empty.");
-
-
-            var result = await _userService.AddFriendByEmail(id, email.Trim());
+            var result = await _userService.AddFriendByEmail(id, dto.Email.Trim());
 
             if (result == "User not found") return NotFound("User with that email does not exist.");
             if (result == "Cannot add yourself") return BadRequest("You cannot add yourself.");
             
             return Ok(new { message = "Friend added successfully!" });
+        }
+
+        private UserResponseDto MapToDto(User user)
+        {
+            return new UserResponseDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Interests = user.Interests,
+                Bio = user.Bio,
+                Role = user.Role
+            };
         }
     }
 }

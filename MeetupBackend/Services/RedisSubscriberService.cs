@@ -1,5 +1,5 @@
 using MeetupBackend.Hubs;
-using MeetupBackend.Models;
+using MeetupBackend.DTOs;
 using Microsoft.AspNetCore.SignalR;
 using StackExchange.Redis;
 using System.Text.Json;

@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { updateEvent } from '../api/eventService';
 import './EditEvent.css'; 
 
+const CATEGORIES = ['Tech', 'Sport', 'Music', 'Art', 'Travel', 'Food', 'Gaming', 'Social'];
+
 const EditEvent = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,13 +80,9 @@ const EditEvent = () => {
         <div className="ee-form-group">
             <label className="ee-label">Category</label>
             <select className="ee-select" value={category} onChange={e => setCategory(e.target.value)}>
-                <option value="Tech">Tech</option>
-                <option value="Sport">Sport</option>
-                <option value="Music">Music</option>
-                <option value="Art">Art</option>
-                <option value="Travel">Travel</option>
-                <option value="Food">Food</option>
-                <option value="Gaming">Gaming</option>
+                {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                ))}
             </select>
         </div>
 

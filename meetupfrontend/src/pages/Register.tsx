@@ -8,14 +8,23 @@ const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    bio: ''
   });
   
-  // Interesovanja cuvamo kao niz stringova
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const availableInterests = ['Tech', 'Music', 'Sport', 'Social'];
+  const availableInterests = [
+    'Tech', 
+    'Sport', 
+    'Music', 
+    'Art', 
+    'Travel', 
+    'Food', 
+    'Gaming', 
+    'Social'
+  ];
 
   const handleCheckboxChange = (interest: string) => {
     if (selectedInterests.includes(interest)) {
@@ -32,15 +41,16 @@ const Register = () => {
 
     try {
       await register({
-        id: '', // Backend generise ID
+        id: '',
         name: formData.name,
         email: formData.email,
         interests: selectedInterests,
-        role: 'User' // Default rola
+        role: 'User',
+        bio: formData.bio
       });
 
       alert('Registration successful! Please log in.');
-      navigate('/'); // Vrati ga na Login ekran
+      navigate('/'); 
     } catch (err) {
       console.error(err);
       setError('Registration failed. Email might be taken.');
@@ -72,9 +82,16 @@ const Register = () => {
           className="register-input"
         />
 
-        {/* Sekcija za biranje interesovanja */}
+        <textarea
+          placeholder="Tell us a bit about yourself (Bio)..."
+          value={formData.bio}
+          onChange={(e) => setFormData({...formData, bio: e.target.value})}
+          rows={3}
+          className="register-textarea"
+        />
+
         <div className="interests-section">
-          <p style={{margin: '0 0 5px 0', fontWeight: 'bold'}}>Your Interests:</p>
+          <p className="interests-title">Your Interests:</p>
           <div className="checkbox-group">
             {availableInterests.map(interest => (
               <label key={interest} className="checkbox-label">

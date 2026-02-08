@@ -1,14 +1,9 @@
 import apiClient from './axiosClient';
+import type { UpdateUserDto } from '../models/User'; 
 
-export interface UserProfileUpdate {
-    id: string;
-    name: string;
-    email: string;
-    bio?: string;
-    interests?: string[];
-}
 
-export const updateUserProfile = async (userId: string, data: UserProfileUpdate) => {
+
+export const updateUserProfile = async (userId: string, data: UpdateUserDto) => {
   const response = await apiClient.put(`/users/${userId}`, data);
   return response.data;
 };
